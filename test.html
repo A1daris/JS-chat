@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Vanilla Chat</title>
+
+	<link rel="stylesheet" href="css/chat-css.css">
+</head>
+<body>
+
+<div class="wrapper">
+	<div class="login-wrap" id="login-wrap">
+		<div class="head-wrap">
+			<h1>Chat</h1>
+		</div>
+		<div class="bottom-wrap">
+			<div class="userinput-wrap">
+				
+				<form class="userinput">
+					<label for="username">Username</label>
+					<input type="text" id="username" name="username" placeholder="sienna@app.com" required>
+					<button id="sendUsername">Get Started</button>
+				</form>
+
+			</div>
+		</div>
+	</div>
+	<div class="chat-wrap hidden">
+		<div class="top-nav">
+			
+		</div>
+		<div id="chat-window" class="window"></div>
+		<div class="bottom">
+		
+			<input type="text" name="enter" placeholder="Type message..." id="message"/>
+			<button id="button">Send</button>
+		</div>
+	</div>
+</div>
+
+<script>
+//clear localStorage
+localStorage.clear();
+
+var Data = new Date();
+
+//конструктор обьектов сообщений
+var Message = function(name, message, date) {
+	this.name = controller.username;
+	this.message = message;
+	this.date = date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds();
+};
+
+
+//view------------
+
+var view = {
+	
+	chatWindow: document.getElementById("chat-window"),
+	
+	//добавляет див с сообщением
+	createItem: function(msg, type) {
+		var newItem = document.createElement('div');
+		newItem.innerHTML = "<span class='usrname'>" + msg.name + "</span> <br>" + msg.message + "<br>" + "<span class='date'>" + msg.date + "</span>";
+		view.chatWindow.appendChild(newItem);
+		view.clearInput();
+		view.chatWindow.scrollTop = view.chatWindow.scrollHeight;
+		if ( type ) {
+			newItem.className = type
+		}
+	},
+	
+	//скрывает окно входа
+	hideLogin: function() {
+		var wrap = document.getElementById("login-wrap");
+		var mainWrap = document.getElementsByClassName("chat-wrap")[0];
+			wrap.style.display = "none";
+			mainWrap.className -= "hidden";
+
+	},
+	//пишет имя пользователя над чатом
+	showUsername: function(username) {
+		var topUsername = document.getElementsByClassName("top-nav")[0];
+		topUsername.innerHTML = username;
+	},
+
+	clearInput: function() {
+		var input = document.getElementById("message");
+		input.value = "";
+	},
+
+}//--------------------
+
+
+// model----------------
+
+var model = {
+	//ключ для локалсторедж
+	index: 0,
+
+	//создает обьект "сообщение" из полученных параметров
+	createMessage: function (name, message, date) {
+		var data = new Date();
+		var message = new Message(name, message, data);
+		model.setMessageIndex();
+		return message;
+	},
+
+	//генерит индекс номер сообщения
+	setMessageIndex: function() {
+		model.index = model.index + 1;
+		return model.index;
+	},
+
+	//пишет пару индекс:сообщение в LocalStorage, отправляет сообщение во вью
+	setToStorage: function(index, message) {
+		localStorage[index] = JSON.stringify(message);
+		model.sendToView(message, "mymes");
+	},
+
+	//считывает новое сообщение и отпраляет во view
+	getMessage: function(index) {
+		if (index != null) {
+			var msg = JSON.parse(localStorage[index])
+			model.sendToView(msg)
+		}
+	},
+
+	//send to view
+	sendToView: function(message, type) {
+		view.createItem(message, type);
+	},
+
+};//----------------------
+
+
+//controller-----------------
+
+var controller = {
+	//username
+	username: "",
+
+	//берем текст из инпута, отправка в модель(в хранилище)
+	sendMessage: function(user, message) {
+		var msg = document.getElementById('message').value;
+		if (msg) {
+			return model.setToStorage(model.index, model.createMessage(user, msg));
+		}
+	},
+
+	//Проверка имя пользователя
+	checkUserName: function() {
+
+		if (document.getElementById('username').value) {
+			view.hideLogin();
+			controller.getUserName();
+		} else {
+			// toggle class "required"
+		}
+	},
+
+	//отправляет имя пользователя в sendMessage
+	getUserName: function() {
+		controller.username = document.getElementById('username').value;
+		view.showUsername(controller.username);
+		return controller.username
+	}
+
+};//--------------
+
+
+//инициализация---------------------
+(function() {
+
+		var sendButton = document.getElementById("button");
+		sendButton.onclick = controller.sendMessage;
+
+		var usernameButton = document.getElementById("sendUsername");
+		usernameButton.onclick = function(e) {
+			e.preventDefault();
+			controller.checkUserName();
+		}
+
+		// Функция обработчика события
+		function storageChanged(e) {
+			model.getMessage(e.key);
+		};
+		// обработчик события обновление local storage
+		window.addEventListener('storage', storageChanged, false)
+
+}());//--------------------------
+
+
+
+
+
+</script>
+</body>
+</html>
